@@ -1,13 +1,13 @@
 import glob
 import os
 import torch
-from torch.utils.data import dataset, dataloader
+from torch.utils.data import Dataset
 import matplotlib.image as mpimg
 import numpy as np
 import cv2
 
 
-class DogsCatsDataset:
+class DogsCatsDataset(Dataset):
     def __init__(self, root_dir, transform=None):
         """
         :param root_dir: directory to images
@@ -21,7 +21,7 @@ class DogsCatsDataset:
 
     def __getitem__(self, idx):
         images_list = os.listdir(self.root_dir)
-        image_name = images_list[idx]
+        image_name = os.path.join(self.root_dir, images_list[idx])
         image = mpimg.imread(image_name)
 
         if image.shape[2] == 4:
@@ -43,6 +43,7 @@ class DogsCatsDataset:
         return sample
 
 # transforms
+
 
 class Normalize(object):
     """Convert a color image to grayscale and normalize color range to [0,1]."""
@@ -83,6 +84,37 @@ class Rescale(object):
         img = cv2.resize(image, (new_w, new_h))
 
         return {'image': img, 'category': category}
+
+
+class RandomCrop(object):
+    """Crop randomly the image in a sample.
+
+    Args:
+        output_size (tuple or int): Desired output size. If int, square crop
+            is made.
+    """
+
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        if isinstance(output_size, int):
+            self.output_size = (output_size, output_size)
+        else:
+            assert len(output_size) == 2
+            self.output_size = output_size
+
+    def __call__(self, sample):
+        image, category = sample['image'], sample['category']
+
+        h, w = image.shape[:2]
+        new_h, new_w = self.output_size
+
+        top = np.random.randint(0, h - new_h)
+        left = np.random.randint(0, w - new_w)
+
+        image = image[top: top + new_h,
+                      left: left + new_w]
+
+        return {'image': image, 'category': category}
 
 
 class ToTensor(object):
