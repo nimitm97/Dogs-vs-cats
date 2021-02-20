@@ -27,7 +27,7 @@ class DogsCatsDataset(Dataset):
         if image.shape[2] == 4:
             image = image[:, :, 0:3]
 
-        category_list = image_name.split(".")
+        category_list = images_list[idx].split(".")
         category = category_list[0]
 
         if category == "cat":
